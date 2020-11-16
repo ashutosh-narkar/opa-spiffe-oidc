@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -34,7 +35,7 @@ type Claim struct {
 }
 
 func serveInvoices(w http.ResponseWriter, r *http.Request) {
-	// this path does not query OPA so return hardcoded invoices
+	// this path does not query OPA so return hardcoded invoices and claims
 
 	invoices := []Invoice{}
 
@@ -104,13 +105,50 @@ func serveInvoicesWithOPA(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
+		return
 	}
 
 	defer resp.Body.Close()
 
+	invoiceMap := make(map[string][]*Invoice)
+
 	if resp.StatusCode == 200 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		var data interface{}
+		err = json.Unmarshal(body, &data)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		dataMap, ok := data.(map[string]interface{})
+		if !ok {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Conversion error"))
+			return
+		}
+
+		dataList, ok := dataMap["claims"].([]interface{})
+		if !ok {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Conversion error"))
+			return
+		}
+
 		var claims []Claim
-		json.NewDecoder(resp.Body).Decode(&claims)
+		for _, item := range dataList {
+			dbByte, _ := json.Marshal(item)
+			var claim Claim
+			_ = json.Unmarshal(dbByte, &claim)
+			claims = append(claims, claim)
+		}
 
 		if len(claims) != 0 {
 			invoice1.Claims = claims[0]
@@ -121,7 +159,6 @@ func serveInvoicesWithOPA(w http.ResponseWriter, r *http.Request) {
 	invoices = append(invoices, &invoice1)
 	invoices = append(invoices, &invoice2)
 
-	invoiceMap := make(map[string][]*Invoice)
 	invoiceMap["invoices"] = invoices
 	json.NewEncoder(w).Encode(invoiceMap)
 }
