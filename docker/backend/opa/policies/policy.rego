@@ -1,25 +1,22 @@
 package envoy.authz
 
 import input.attributes.request.http as http_request
-import input.attributes.source.address as source_address
 
 default allow = false
 
-# allow Web service to access Backend service
+# helper to get the token payload
+token = {"payload": payload} { io.jwt.decode(input.sm_token, [_, payload, _]) }
+
+# allow GET access to the "/claims" API for all services except the "invoice_service"
 allow {
-    http_request.path == "/good/backend"
     http_request.method == "GET"
-    svc_spiffe_id == "spiffe://domain.test/web-server"
+    http_request.path == "/claims"
+    http_request.headers.serviceid != "invoice_service"
 }
 
-# allow Backend service access from localhost
+# allow GET access to the "/invoices" API to users with the "BILLING_MANAGER" role
 allow {
-    source_address.Address.SocketAddress.address == "127.0.0.1"
-    http_request.path == "/good/db"
-    http_request.method == "GET"
-}
-
-svc_spiffe_id = client_id {
-    [_, _, uri_type_san] := split(http_request.headers["x-forwarded-client-cert"], ";")
-    [_, client_id] := split(uri_type_san, "=")
+    input.method == "GET"
+    input.path == ["invoices", "opa"]
+    token.payload.userRole == "BILLING_MANAGER"
 }

@@ -1,4 +1,6 @@
 plugins:
      envoy.ext_authz.grpc:
-       addr: :9192
+       addr: :9191
        query: data.envoy.authz.allow
+decision_logs:
+    console: true

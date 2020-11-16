@@ -1,4 +1,0 @@
-plugins:
-     envoy.ext_authz.grpc:
-       addr: :9193
-       query: data.envoy.authz.allow

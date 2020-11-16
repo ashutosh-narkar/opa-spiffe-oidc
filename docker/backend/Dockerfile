@@ -8,7 +8,8 @@ COPY conf/envoy.yaml /etc/envoy/envoy.yaml
 COPY conf/spire-agent.conf /opt/spire/conf/agent/agent.conf
 COPY conf/agent.key.pem /opt/spire/conf/agent/agent.key.pem
 COPY conf/agent.crt.pem /opt/spire/conf/agent/agent.crt.pem
-COPY backend-server /usr/local/bin/backend-server
+
+COPY backend-app /usr/local/bin/backend-app
 
 WORKDIR /opt/spire
 

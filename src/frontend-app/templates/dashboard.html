@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block body %}
+  <h1 class="text-center">Dashboard</h1>
+  <div class="row">
+    <div class="col-sm-8 offset-sm-2">
+      <p>Welcome to the dashboard, <strong>{{ g.user.profile.firstName }}</strong>! Click below to view invoices.</p>
+    </div>
+  </div>
+
+  <div class="row">
+      <div class="col-sm-8 offset-sm-2">
+          <p><a href="/invoices"><input type="button" value="See Invoices" style="width: 25%;"></a></p>
+      </div>
+       <div class="col-sm-8 offset-sm-2">
+          <p><a href="/invoices/opa"><input type="button" value="See Invoices With OPA" style="width: 25%; background-color: #008CBA; color: white;"></a></p>
+      </div>
+  </div>
+
+
+
+  {% if status == 200 %}
+      <hr>
+      <div class="row">
+         <div class="col-sm-8 offset-sm-2">
+             <p>{% for invoice in invoices %}
+                 <div>
+                    {% for key, value in invoice.items() %}
+                         <div class="row">
+                            {% if key == "Claims" %}
+                                {% if value.items() |length == 0 %}
+                                    <p>{{key}} {{": []"}}</p>
+                                {% else %}
+                                  <p>{{key}} {{":"}}</p>
+                                  <ul>
+                                    {% for key1, value1 in value.items() %}
+                                        <li>{{key1}} {{":"}} {{value1}}</li>
+                                    {% endfor %}
+                                  </ul>
+                                {% endif %}
+                            {% else %}
+                                 <p>{{key}} {{":"}} {{value}}</p>
+                            {% endif %}
+                         </div>
+                    {% endfor %}
+                </div><br>
+                {% endfor %}
+             </p>
+         </div>
+      </div>
+  {% endif %}
+  {% if status == 403 %}
+      <hr>
+      <br>
+      <div class="row">
+          <div class="col-sm-8 offset-sm-2">
+              {% for key, value in error.items() %}
+                  <p style="color:red;">{{key}} {{":"}} {{value}}</p>
+              {% endfor %}
+          </div>
+      </div>
+  {% endif %}
+{% endblock %}
